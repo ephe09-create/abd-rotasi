@@ -131,6 +131,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .jump .sm{margin-right:4px}
 .jump button{font:500 .76rem var(--font-m);padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--acc);cursor:pointer}
 .jump button[aria-current]{background:var(--acc);color:var(--acc-ink)}
+.lk{font:500 .62rem var(--font-m);margin-left:6px;color:var(--warn);font-style:normal}
 .btn.xs{padding:5px 10px;font-size:.78rem;display:inline-block}
 .bkrow{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
 .bkrow .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
@@ -501,7 +502,7 @@ function buildBullet(){
 }
 function shell(){
   const steps=['s1','s2','s3','s4','s5','s6','s7','s8'].concat(STAFF?['s9']:[]);
-  const navBtns=steps.map((s,i)=>`<button class="step${i===5?' gap':''}" data-go="${i+1}" ${cur===i+1?'aria-current="step"':''}><i>${i+1}</i>${t(s)}</button>`).join('');
+  const navBtns=steps.map((s,i)=>`<button class="step${i===5?' gap':''}" data-go="${i+1}" ${cur===i+1?'aria-current="step"':''}><i>${i+1}</i>${t(s)}<em class="lk"></em></button>`).join('');
   const nav=(n)=>`<div class="actions">${n>1?`<button class="btn ghost" data-go="${n-1}">${t('back')}</button>`:''}${n<steps.length?`<button class="btn" data-go="${n+1}">${n===1?t('see'):t('next')}</button>`:''}${n===1?`<button class="btn ghost" data-reset="1">${t('reset')}</button>`:''}</div>`+`<div class="jump"><span class="sm">${t('jump')}:</span>${steps.map((x,j)=>`<button data-go="${j+1}" ${n===j+1?'aria-current="step"':''}>${j+1}. ${t(x)}</button>`).join('')}</div>`;
   app.innerHTML=`
   <header class="top"><div class="brand"><b>ABD Rotası</b><span>TR → US · ${t('tag')}</span></div>
@@ -510,11 +511,11 @@ function shell(){
   <div id="introbox" style="margin:0 0 16px"></div>
   <div class="shell"><nav class="rail" aria-label="Steps">${navBtns}</nav>
   <div>
-   <section class="panel ${cur===1?'on':''}" id="p1"><h2>${t('h1')}</h2><p class="intro">${t('i1')}</p><div id="cvbox"></div>
+   <section class="panel ${cur===1?'on':''}" id="p1"><h2>${t('h1')}</h2><p class="intro">${t('i1')}</p><div id="sumbox"></div><div id="cvbox"></div>
      <h3 class="grp">${t('g1')}</h3><div class="grid">${ctl('edu','sel')}${ctl('field','sel')}${ctl('exp','num')}${ctl('major','txt')}${ctl('title','txt')}</div>
      <h3 class="grp">${t('g2')}</h3><div class="grid">${ctl('eng','sel')}${ctl('abroad','sel')}${ctl('refusal','sel')}</div>
      <h3 class="grp">${t('g3')}</h3><div class="grid">${ctl('offer','sel')}${ctl('achv','sel')}${ctl('intl','sel')}${ctl('funds','sel')}${ctl('usAdmit','sel')}${ctl('fam','sel')}</div>
-     <div id="histbox"></div>${nav(1)}</section>
+     <div id="histbox"></div><div id="statbox"></div><div id="gatebox" style="margin-top:20px"></div>${nav(1)}</section>
    <section class="panel ${cur===2?'on':''}" id="p2"><h2>${t('h2')}</h2><p class="intro">${t('i2')}</p><div id="res2"></div><div id="reqbox"></div>${nav(2)}</section>
    <section class="panel ${cur===3?'on':''}" id="p3"><h2>${t('h3')}</h2><p class="intro">${t('i3')}</p>
      <div class="grid" style="margin-bottom:20px">${ctl('auth','sel')}${ctl('cred','sel')}${ctl('net','sel')}${ctl('cv','sel')}${ctl('cert','chk')}</div><div id="res3"></div>${nav(3)}</section>
@@ -1532,13 +1533,14 @@ async function sbInit(){
     const {data}=await SB.auth.getSession();SBU=data.session?data.session.user:null;
     SB.auth.onAuthStateChange((ev,s)=>{const u=s?s.user:null;if((u&&u.id)!==(SBU&&SBU.id)){SBU=u;setTimeout(sbLoad,0);}});
     await sbAttorneys();await sbLoad();
-  }catch(e){SBST.msg=t('sb_err');sbRender();}
+  }catch(e){SBST.msg=t('sb_err');SBREADY=true;sbRender();}
 }
 function sbHTML(){
   const m=SBST.msg?`<p class="cap" role="status">${esc(SBST.msg)}</p>`:'';
   if(!SB_KEY)return `<div class="box"><h3>${t('sb_h')}</h3><p class="cap">${t('sb_off')}</p></div>`;
   if(!SB)return `<div class="box"><h3>${t('sb_h')}</h3>${m||'<p class="sm">…</p>'}</div>`;
-  if(!SBU){
+  if(!SBU)return `<div class="box"><h3>${t('sb_h')}</h3><p class="cap">${t('sb_gatehint')}</p></div>`;
+  if(false){
     const up=SBST.mode==='up';
     return `<div class="box"><h3>${t('sb_h')}</h3>${m}
      <div class="grid" style="max-width:520px;margin-top:10px">${up?`<label class="fld" for="sb_name"><span>${t('sb_name')}</span><input id="sb_name" type="text" maxlength="80" autocomplete="name" value="${esc(SBST.name)}"></label>`:''}
@@ -1628,6 +1630,155 @@ app.addEventListener('click',async e=>{
     }
   }catch(err){sbMsg(t('sb_err'));}
 });
+
+
+/* ===== Gate (sign-in + confirmed IBAN payment), F-2 / status guide, summary graphic ===== */
+Object.assign(L.tr,{
+ lock:'kilitli',
+ gt_h:'Diğer adımlar için hesap ve ödeme gerekir',gt_i:'1. adım ücretsizdir. Vize hazırlığı skorları ve sonraki adımlar için önce hesap aç, sonra ödemeyi yap. Ödeme onaylanınca tüm adımlar açılır.',
+ gt_s1:'1. Hesap aç veya giriş yap',gt_s2:'2. IBAN ile ödeme yap ve bildir',gt_on:'Hesabın aktif, tüm adımlar açık.',gt_load:'Hesap sistemi yükleniyor…',
+ sb_gatehint:'Bu bölüm için giriş yapman ve ödemenin onaylanması gerekir. 1. adımın altındaki kutudan giriş yap.',
+ pay_h:'Ödeme',pay_amt:'Tutar',pay_iban:'IBAN',pay_hold:'Hesap sahibi',pay_bank:'Banka',pay_ref:'Açıklama kısmına yazacağın kod',pay_sender:'Gönderen adı soyadı',
+ pay_i:'Türkiye’deki hesabından yukarıdaki IBAN’a havale yap, açıklamaya referans kodunu yaz, sonra aşağıdaki düğmeye bas. Ödeme elle kontrol edilip onaylanır.',
+ pay_btn:'Ödemeyi yaptım',pay_ref2:'Durumu yenile',pay_none:'Ödeme bilgileri henüz eklenmedi. Biraz sonra tekrar dene.',pay_need:'Gönderen adını yaz.',pay_sent:'Bildirimin alındı.',
+ pay_pending:'Onay bekleniyor',pay_ok:'Onaylandı',pay_rej:'Reddedildi, bilgileri kontrol edip tekrar bildir',pay_copy:'Kopyala',
+ sg_h:'Statüler ne işe yarar? (ücretsiz)',sg_i:'ABD’de farklı statülerin çalışma ve eğitim hakları farklıdır. Hangi statünün ne için olduğunu buradan okuyabilirsin.',
+ sg_work:'Çalışma',sg_f2h:'F-2 hakkında',sg_f2:['F-2, F-1 öğrencinin eşi veya çocuğu için statüdür. Okul (DSO), her bağımlı için ayrı I-20 verir.','F-2 ile çalışılamaz ve sosyal güvenlik numarası alınamaz.','Okulda tam zamanlı olmayan (kısmi) eğitim alınabilir. Yetişkin bir bağımlı tam zamanlı okumak isterse I-539 ile F-1 veya M-1’e statü değiştirmelidir.','Çocukların okul kuralları ayrıdır; resmi sayfadan kontrol et.'],
+ sg_src:'Resmi kaynak: Study in the States (DHS), bağımlılar sayfası.',
+ sv_t:'ABD Rotası',sv_sub:'Türkiye’den ABD’ye hazırlık yol haritası',sv_free:'ÜCRETSİZ',sv_paid:'ÖDEME SONRASI',
+ sv_a1:'1. Profil ve vize uygunluğu',sv_a2:'CV’den doldur, geçmiş kayıtlar,',sv_a3:'statü rehberi (F-1, F-2 ve diğerleri)',
+ sv_g1:'Hesap aç + IBAN ile ödeme',sv_g2:'Ödeme onaylanınca 2–8. adımlar açılır',
+ sv_c:[['Vize hazırlığı','Yol bazlı hazırlık skorları','ve nedenleri'],['İş bulma hazırlığı','Alan yönlendirmesi, değerlendirme','firmaları ve e-Devlet notları'],['Çalışma izni ve yan iş','Statüye göre neler yapılabilir',''],['Kariyer adımları','CV, başvuru ve mülakat',''],['Randevu','Cumartesi ve pazar,','Türkiye saati'],['USCIS takibi','Başvuru numarası ve durum',''],['Avukat','Doğrulanmış avukat ve','PDF belge paylaşımı']],
+ sv_f1:'Skorlar hazırlık göstergesidir, onay olasılığı değildir (en çok 90).',sv_f2:'Bu site hukuki tavsiye vermez.',sv_alt:'ABD Rotası adımlarının özeti: 1. adım ücretsiz, 2 ila 8. adımlar hesap ve ödeme sonrası açılır.'
+});
+Object.assign(L.en,{
+ lock:'locked',
+ gt_h:'The other steps need an account and payment',gt_i:'Step 1 is free. For the visa readiness scores and the next steps, create an account first, then pay. All steps open once the payment is confirmed.',
+ gt_s1:'1. Create an account or sign in',gt_s2:'2. Pay by IBAN and report it',gt_on:'Your account is active, all steps are open.',gt_load:'Loading the account system…',
+ sb_gatehint:'To use this section you must sign in and your payment must be confirmed. Sign in from the box under step 1.',
+ pay_h:'Payment',pay_amt:'Amount',pay_iban:'IBAN',pay_hold:'Account holder',pay_bank:'Bank',pay_ref:'Code to write in the transfer description',pay_sender:'Sender full name',
+ pay_i:'Make a transfer from your account in Türkiye to the IBAN above, write the reference code in the description, then press the button below. Payments are checked and confirmed by hand.',
+ pay_btn:'I have paid',pay_ref2:'Refresh status',pay_none:'Payment details have not been added yet. Try again shortly.',pay_need:'Enter the sender name.',pay_sent:'Your notice was received.',
+ pay_pending:'Waiting for confirmation',pay_ok:'Confirmed',pay_rej:'Rejected, check the details and report again',pay_copy:'Copy',
+ sg_h:'What are the statuses for? (free)',sg_i:'Different US statuses carry different work and study rights. Read here what each status is for.',
+ sg_work:'Work',sg_f2h:'About F-2',sg_f2:['F-2 is the status for the spouse or child of an F-1 student. The school (DSO) issues a separate I-20 for each dependent.','F-2 holders may not work and cannot get a Social Security number.','They may study part-time (less than a full course of study). An adult dependent who wants to study full-time must change status to F-1 or M-1 with Form I-539.','School rules for children are separate; check the official page.'],
+ sg_src:'Official source: Study in the States (DHS), dependents page.',
+ sv_t:'ABD Rotası',sv_sub:'Preparation roadmap from Türkiye to the US',sv_free:'FREE',sv_paid:'AFTER PAYMENT',
+ sv_a1:'1. Profile and visa readiness',sv_a2:'Fill from your resume, history records,',sv_a3:'status guide (F-1, F-2 and others)',
+ sv_g1:'Create account + pay by IBAN',sv_g2:'Steps 2–8 open once payment is confirmed',
+ sv_c:[['Visa readiness','Readiness scores per route','and the reasons'],['Job search readiness','Field guidance, evaluation','firms and e-Devlet notes'],['Work permit and side income','What each status allows',''],['Career steps','Resume, applications, interviews',''],['Booking','Saturdays and Sundays,','Türkiye time'],['USCIS tracking','Receipt number and status',''],['Attorney','Verified attorneys and','PDF document sharing']],
+ sv_f1:'Scores are readiness indicators, not approval odds (max 90).',sv_f2:'This site does not give legal advice.',sv_alt:'Summary of the ABD Rotası steps: step 1 is free, steps 2 to 8 open after sign-in and payment.'
+});
+(function(){
+  const f2tr=['Öğrenci eşi veya çocuğu (F-2)','Çalışamaz','F-1 öğrencinin eşi veya çocuğu içindir. Çalışma izni ve sosyal güvenlik numarası yoktur. Kısmi eğitim alınabilir; yetişkin tam zamanlı okumak isterse I-539 ile F-1 veya M-1’e geçmelidir.'];
+  const f2en=['Student’s spouse or child (F-2)','No work','For the spouse or child of an F-1 student. No work authorization or Social Security number. Part-time study is allowed; an adult who wants to study full-time must change to F-1 or M-1 with Form I-539.'];
+  if(!STATUS.some(x=>x[0]==='f2')){const i=STATUS.findIndex(x=>x[0]==='f1');STATUS.splice(i+1,0,['f2',f2tr,f2en]);}
+})();
+const F2URL='https://studyinthestates.dhs.gov/students/get-started/bringing-dependents-to-the-united-states';
+let SBPAID=false,SBCFG={},SBREADY=false,gateOpen=false;
+const locked=()=>!!SB_KEY&&!(SBU&&(SBPAID||SBROLE==='attorney'||SBROLE==='admin'));
+function refreshLocks(){
+  const on=locked();
+  document.querySelectorAll('.rail .step').forEach((el,i)=>{const e=el.querySelector('.lk');if(e)e.textContent=(i>0&&on)?t('lock'):'';});
+}
+function authHTML(){
+  const m=SBST.msg?`<p class="cap" role="status">${esc(SBST.msg)}</p>`:'';
+  const up=SBST.mode==='up';
+  return `${m}<div class="grid" style="max-width:520px;margin-top:10px">${up?`<label class="fld" for="sb_name"><span>${t('sb_name')}</span><input id="sb_name" type="text" maxlength="80" autocomplete="name" value="${esc(SBST.name)}"></label>`:''}
+   <label class="fld" for="sb_email"><span>${t('sb_mail')}</span><input id="sb_email" type="email" maxlength="120" autocomplete="email" value="${esc(SBST.email)}"></label>
+   <label class="fld" for="sb_pw"><span>${t('sb_pw')}</span><input id="sb_pw" type="password" maxlength="72" autocomplete="${up?'new-password':'current-password'}"></label></div>
+   ${up?`<label class="chk" style="margin-top:10px"><input id="sb_consent" type="checkbox" ${SBST.consent?'checked':''}><span>${t('sb_consent')}</span></label>`:''}
+   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-a="${up?'sbup':'sbin'}">${up?t('sb_up'):t('sb_in')}</button><button class="btn ghost" data-a="sbmode">${up?t('sb_swin'):t('sb_swup')}</button></div>`;
+}
+function payHTML(){
+  const c=SBCFG,ref='ABD-'+SBU.id.replace(/-/g,'').slice(0,6).toUpperCase();
+  const last=(SBST.pay||[])[0];
+  const st=last?(last.status==='pending'?`<span class="chip wait">${t('pay_pending')}</span>`:last.status==='rejected'?`<span class="chip bad">${t('pay_rej')}</span>`:`<span class="chip ok">${t('pay_ok')}</span>`):'';
+  const row=(k,v,cp)=>v?`<tr><td>${t(k)}</td><td><b class="mono" style="overflow-wrap:anywhere">${esc(v)}</b>${cp?` <button class="btn ghost xs" data-a="sbcopy" data-v="${esc(v)}">${t('pay_copy')}</button>`:''}</td></tr>`:'';
+  if(!c.pay_iban)return `<p class="cap">${t('pay_none')}</p><button class="btn ghost xs" data-a="sbrefresh">${t('pay_ref2')}</button>`;
+  const pending=last&&last.status==='pending';
+  return `<h4>${t('pay_h')}</h4><div class="tabw"><table><tbody>${row('pay_amt',c.pay_amount)}${row('pay_iban',c.pay_iban,1)}${row('pay_hold',c.pay_holder)}${row('pay_bank',c.pay_bank)}${row('pay_ref',ref,1)}</tbody></table></div>
+   <p class="sm" style="margin-top:8px">${t('pay_i')}</p>
+   ${pending?'':`<label class="fld" for="sb_sender" style="max-width:360px"><span>${t('pay_sender')}</span><input id="sb_sender" type="text" maxlength="80"></label>`}
+   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">${pending?'':`<button class="btn" data-a="sbpaid">${t('pay_btn')}</button>`}<button class="btn ghost" data-a="sbrefresh">${t('pay_ref2')}</button>${st}</div>`;
+}
+function renderGate(){
+  const el=document.getElementById('gatebox');if(!el)return;
+  if(!SB_KEY){el.innerHTML='';return;}
+  let h='';
+  if(!SB&&!SBREADY)h=`<div class="box"><p class="sm">${t('gt_load')}</p></div>`;
+  else if(!SB)h=`<div class="box"><p class="cap">${t('sb_err')}</p></div>`;
+  else if(!locked()){
+    h=gateOpen||true?`<div class="box"><p class="sm" style="margin:0">${t('gt_on')} ${esc(SBU.email||'')} <button class="btn ghost xs" data-a="sbout">${t('sb_out')}</button></p></div>`:'';
+  }else{
+    h=`<div class="box" style="border-color:var(--warn)"><h3>${t('gt_h')}</h3><p class="sm" style="margin:6px 0">${t('gt_i')}</p>
+      <h4>${t('gt_s1')}</h4>${SBU?`<p class="sm">${esc(SBU.email||'')} <button class="btn ghost xs" data-a="sbout">${t('sb_out')}</button></p>`:authHTML()}
+      ${SBU?`<h4>${t('gt_s2')}</h4>${payHTML()}`:''}</div>`;
+  }
+  el.innerHTML=h;
+}
+function statGuideHTML(){
+  const i=li(lang);
+  return `<div class="box" style="margin-top:24px"><h3>${t('sg_h')}</h3><p class="sm" style="margin-top:6px">${t('sg_i')}</p>
+   ${STATUS.map(s=>`<details ${s[0]==='f2'?'open':''} style="margin-top:8px"><summary><b>${s[i][0]}</b> <span class="sm">· ${t('sg_work')}: ${s[i][1]}</span></summary><p class="sm" style="margin:6px 0 4px">${s[i][2]}</p>${s[0]==='f2'?`<h4>${t('sg_f2h')}</h4><ul class="tight">${t('sg_f2').map(x=>`<li>${x}</li>`).join('')}</ul><p class="sm"><a href="${F2URL}" target="_blank" rel="noopener noreferrer">${t('sg_src')}</a></p>`:''}</details>`).join('')}</div>`;
+}
+function summarySVG(){
+  const c=t('sv_c');
+  const card=(n,x,y,d)=>`<g transform="translate(${x} ${y})"><rect width="264" height="74" rx="10" fill="var(--bg)" stroke="var(--line)"/><circle cx="24" cy="26" r="14" fill="var(--acc)"/><text x="24" y="31" text-anchor="middle" font-size="14" font-weight="700" fill="var(--acc-ink)">${n}</text><text x="48" y="30" font-size="15" font-weight="700" fill="var(--ink)">${d[0]}</text><text x="48" y="49" font-size="12" fill="var(--mute)">${d[1]}</text><text x="48" y="65" font-size="12" fill="var(--mute)">${d[2]}</text></g>`;
+  const pos=[[0,410],[296,410],[0,492],[296,492],[0,574],[296,574],[148,656]];
+  const arrow=(y)=>`<path d="M270 ${y} L290 ${y} L280 ${y+14} Z" fill="var(--mute)"/>`;
+  return `<svg viewBox="0 0 560 800" role="img" aria-labelledby="svt" style="width:100%;max-width:560px;height:auto;display:block;margin:0 auto;font-family:var(--font-b)"><title id="svt">${t('sv_alt')}</title>
+  <rect width="560" height="84" rx="12" fill="var(--acc)"/><text x="24" y="40" font-size="26" font-weight="700" fill="var(--acc-ink)" style="font-family:var(--font-d)">${t('sv_t')}</text><text x="24" y="66" font-size="14" fill="var(--acc-ink)">${t('sv_sub')}</text>
+  <rect y="104" width="560" height="124" rx="12" fill="var(--panel)" stroke="var(--ok)" stroke-width="2"/>
+  <rect x="16" y="118" width="104" height="22" rx="11" fill="var(--ok)"/><text x="68" y="133" text-anchor="middle" font-size="11" font-weight="700" fill="var(--bg)">${t('sv_free')}</text>
+  <text x="16" y="170" font-size="18" font-weight="700" fill="var(--ink)">${t('sv_a1')}</text><text x="16" y="194" font-size="13" fill="var(--mute)">${t('sv_a2')}</text><text x="16" y="212" font-size="13" fill="var(--mute)">${t('sv_a3')}</text>
+  ${arrow(236)}
+  <rect y="262" width="560" height="74" rx="12" fill="var(--soft)" stroke="var(--warn)" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="280" y="294" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${t('sv_g1')}</text><text x="280" y="318" text-anchor="middle" font-size="13" fill="var(--mute)">${t('sv_g2')}</text>
+  ${arrow(344)}
+  <rect y="370" width="560" height="388" rx="12" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <rect x="16" y="384" width="130" height="22" rx="11" fill="var(--acc)"/><text x="81" y="399" text-anchor="middle" font-size="11" font-weight="700" fill="var(--acc-ink)">${t('sv_paid')}</text>
+  ${c.map((d,k)=>card(k+2,pos[k][0]+(pos[k][0]?-16:16),pos[k][1]+6,d)).join('')}
+  <text x="280" y="782" text-anchor="middle" font-size="12.5" fill="var(--mute)">${t('sv_f1')} ${t('sv_f2')}</text></svg>`;
+}
+function renderSummary(){const el=document.getElementById('sumbox');if(el)el.innerHTML=`<div class="box" style="margin:0 0 16px">${summarySVG()}</div>`;}
+function renderStat(){const el=document.getElementById('statbox');if(el)el.innerHTML=statGuideHTML();}
+const _ss0=setStep;
+setStep=function(n){
+  if(n>1&&locked()){
+    _ss0(1);gateOpen=true;renderGate();
+    const g=document.getElementById('gatebox');if(g)g.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  _ss0(n);
+};
+const _sbRender0=sbRender;
+sbRender=function(){_sbRender0();renderGate();refreshLocks();};
+const _sbLoad0=sbLoad;
+sbLoad=async function(){
+  if(SB&&SBU){
+    const cf=await SB.from('site_config').select('key,value');SBCFG={};(cf.data||[]).forEach(r=>{SBCFG[r.key]=r.value;});
+    const py=await SB.from('payments').select('*').order('created_at',{ascending:false});
+    SBST.pay=py.data||[];SBPAID=SBST.pay.some(x=>x.status==='confirmed');
+  }else{SBPAID=false;SBROLE='client';SBST.pay=[];}
+  SBREADY=true;
+  await _sbLoad0();
+};
+app.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a;
+  if(a==='sbcopy'){copyText(b.dataset.v,()=>toast(t('copied')));}
+  else if(a==='sbrefresh'){await sbLoad();}
+  else if(a==='sbpaid'){
+    const s=gv('sb_sender').trim();if(!s){sbMsg(t('pay_need'));return;}
+    const ref='ABD-'+SBU.id.replace(/-/g,'').slice(0,6).toUpperCase();
+    const {error}=await SB.from('payments').insert({reference:ref,sender:s});
+    if(error){sbMsg(error.message);return;}
+    await sbLoad();sbMsg(t('pay_sent'));
+  }
+});
+const _renderExtras0=renderExtras;
+renderExtras=function(){_renderExtras0();renderSummary();renderStat();renderGate();refreshLocks();};
 
 shell();
 initDb();
