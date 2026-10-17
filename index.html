@@ -459,7 +459,7 @@ function renderRes3(){
     <div class="two" style="margin-top:20px">
       <div class="box"><h3>${t('gd')}</h3><h4>${t('roles')}</h4><p>${g[0]}</p><h4>${t('steps')}</h4><ul class="tight">${g[1].map(s=>`<li>${s}</li>`).join('')}</ul></div>
       <div class="box"><h3>${t('ce_t')}</h3><p style="margin-top:8px">${t('ce_p')}</p><ul class="tight">${t('ce_l').map(s=>`<li>${s}</li>`).join('')}</ul><p class="sm">${t('ce_n')}</p></div>
-    </div>`;
+    </div>${evalHTML()}`;
 }
 function renderRes4(){
   const i=li(lang)===1?1:2;
@@ -507,6 +507,7 @@ function shell(){
   <header class="top"><div class="brand"><b>ABD Rotası</b><span>TR → US · ${t('tag')}</span></div>
    <div class="lang" role="group" aria-label="Language"><button data-lang="tr" aria-pressed="${lang==='tr'}">TR</button><button data-lang="en" aria-pressed="${lang==='en'}">EN</button></div></header>
   <div class="notice"><strong>${t('stamp')}</strong><span>${t('disc')}</span><span class="sm">${t('priv')}</span></div>
+  <div id="introbox" style="margin:0 0 16px"></div>
   <div class="shell"><nav class="rail" aria-label="Steps">${navBtns}</nav>
   <div>
    <section class="panel ${cur===1?'on':''}" id="p1"><h2>${t('h1')}</h2><p class="intro">${t('i1')}</p><div id="cvbox"></div>
@@ -1236,7 +1237,7 @@ function addCVHist(){
 }
 
 /* ---------- attorney request (step 2) ---------- */
-let AR={topic:'rq_t1',path:'',day:'any',note:'',out:''};
+let AR={topic:'rq_t1',path:'',day:'any',note:'',out:'',att:''};
 function renderReq(){
   const el=document.getElementById('reqbox');if(!el)return;
   const top=PATHS.map(k=>({k,s:CALC[k](p).score})).sort((a,b)=>b.s-a.s)[0].k;
@@ -1244,15 +1245,15 @@ function renderReq(){
   const sel=(id,opts,cur)=>`<select id="${id}" data-q="${id.slice(2)}">${opts.map(o=>`<option value="${o[0]}" ${o[0]===cur?'selected':''}>${o[1]}</option>`).join('')}</select>`;
   el.innerHTML=`<div class="box" style="margin-top:20px"><h3>${t('rq_h')}</h3><p class="sm" style="margin-top:6px">${t('rq_i')}</p>
    <div class="grid">
-    <label class="fld" for="q_topic"><span>${t('rq_topic')}</span>${sel('q_topic',['rq_t1','rq_t2','rq_t3','rq_t4'].map(k=>[k,t(k)]),AR.topic)}</label>
+    <label class="fld" for="q_topic"><span>${t('rq_topic')}</span>${sel('q_topic',['rq_t1','rq_t2','rq_t3','rq_t4','rq_t5','rq_t6'].map(k=>[k,t(k)]),AR.topic)}</label>
     <label class="fld" for="q_path"><span>${t('rq_path')}</span>${sel('q_path',PATHS.map(k=>[k,t('n_'+k)]).concat([['none',t('rq_unsure')]]),AR.path)}</label>
     <label class="fld" for="q_day"><span>${t('rq_day')}</span>${sel('q_day',[['any',t('rq_any')],['sat',t('rq_sat')],['sun',t('rq_sun')]],AR.day)}</label>
    </div>
    <label class="fld" for="q_note" style="margin-top:12px"><span>${t('rq_note')}</span><textarea id="q_note" data-q="note" maxlength="600">${esc(AR.note)}</textarea></label>
-   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-a="rqmake">${t('rq_make')}</button><button class="btn ghost" data-a="rqgo">${t('rq_go')}</button></div>
+   ${attHTML()}<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-a="rqmake">${t('rq_make')}</button><button class="btn ghost" data-a="rqgo">${t('rq_go')}</button></div>
    <div id="rqout">${AR.out?rqOut():''}</div></div>`;
 }
-const rqOut=()=>`<h4>${t('rq_out')}</h4><div class="out" style="white-space:pre-wrap">${esc(AR.out)}</div><div style="margin-top:8px"><button class="btn ghost xs" data-a="copyrq">${t('rq_copy')}</button></div>`;
+const rqOut=()=>{const sa=attSel();const mail=sa&&sa.email?`<a class="btn ghost xs" href="mailto:${encodeURIComponent(sa.email)}?subject=${encodeURIComponent('ABD Rotası')}&body=${encodeURIComponent(AR.out.slice(0,1500))}">${t('at_mail')}</a>`:'';return `<h4>${t('rq_out')}</h4><div class="out" style="white-space:pre-wrap">${esc(AR.out)}</div><div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost xs" data-a="copyrq">${t('rq_copy')}</button>${mail}</div>`;};
 function buildRq(){
   const r=AR.path&&AR.path!=='none'?`${t('n_'+AR.path)} (${CALC[AR.path](p).score}/100)`:t('rq_unsure');
   const h=HH(),g=gapsOf(h.addr).length+gapsOf(h.work).length;
@@ -1265,6 +1266,7 @@ function buildRq(){
    L[lang].fl.refusal+' '+optText('refusal',p.refusal),
    t('hist_h')+': '+HK.map(k=>t('hl_'+k).split(' (')[0]+' '+h[k].length).join(', ')+(g?' · '+t('gap_warn')+': '+g:'')
   ];
+  {const sa=attSel();if(sa)L1.push(t('at_sel')+': '+sa.first+' '+sa.last+' ('+(sa.city||'')+(sa.state?', '+sa.state:'')+', '+sa.barState+' '+t('at_bar')+' '+sa.barNo+')');}
   if(AR.note.trim())L1.push(t('rq_note')+': '+AR.note.trim());
   return L1.join('\n');
 }
@@ -1313,10 +1315,323 @@ app.addEventListener('change',e=>{
   else if(el.dataset.h){const g=document.getElementById('gapbox');if(g)g.innerHTML=gapHTML();}
   else if(el.dataset.k){const lab=el.closest('.fld');if(lab)lab.classList.remove('need');}
 });
-function renderExtras(){renderCV();renderHist();renderReq();}
+function renderExtras(){renderIntro();renderCV();renderHist();renderReq();}
+
+
+/* ===== Credential evaluation firms (NACES) ===== */
+Object.assign(L.tr,{
+ ev_h:'Değerlendirme firmaları ve e-Devlet',ev_i:'Aşağıdakiler NACES üyesi (naces.org/members, kontrol: Ekim 2026) değerlendirme firmalarıdır. Hangisinin kabul edildiğini başvuracağın okul, işveren veya kurum belirler; önce onlara sor.',
+ ev_cf:'Firma',ev_cs:'e-Devlet / elektronik belge (Türkiye)',ev_cl:'Site',
+ ev_yes:'Kabul ediliyor: kurumun elektronik belgesi veya Belge Doğrulama ile doğrulanabilen belge',ev_chk:'Resmi sitesinden kontrol et',ev_un:'Doğrulanamadı, firmaya sor',
+ ev_y1:'ECE: Belge Doğrulama ile doğrulanabilen elektronik transkript için tarama kabul edilir; kurumun doğrudan göndermesi de mümkün (kabul garanti değil). Diploma için iki yüzün fotokopisi veya taraması istenir.',
+ ev_y2:'ERES: kurum onaylı elektronik kayıt kabul edilir; lise diploması taraması Belge Doğrulama ile doğrulanabiliyorsa olur. Lisans diploması için elektronik seçenek yok, tarama yalnızca transkript dereceyi gösteriyorsa kabul edilir.',
+ ev_w:'WES: Türkiye şartları “Required Documents” aracında görünür, oradan kontrol et.',
+ ev_how:'Nasıl yapılır',ev_l:['e-Devlet’te (turkiye.gov.tr) mezuniyet belgesi ve transkript çıktısını al; barkodlu veya doğrulama kodlu PDF olsun.','Firma “Belge Doğrulama” veya kurumdan elektronik gönderimi kabul ediyor mu kontrol et. Kabul etmiyorsa üniversiteden mühürlü zarf iste.','Türkçe belgeler çoğu firmada Türkçe kabul edilir, bazılarında İngilizce çeviri gerekir; firmanın Türkiye sayfasından teyit et.','Değerlendirmeyi işveren, okul veya USCIS’in hangi firmayı kabul ettiğine göre seç. NACES üyeliği kalite göstergesidir, otomatik kabul anlamına gelmez.'],
+ ev_src:'Doğrulanan sayfalar: ECE Türkiye şartları (accounts.ece.org) ve ERES belge şartları (eres.com). Diğer firmaların e-Devlet kabulü teyit edilmedi, kendi sitelerinden veya e-posta ile sorulmalı.'
+});
+Object.assign(L.en,{
+ ev_h:'Evaluation firms and e-Devlet',ev_i:'These are NACES member evaluation firms (naces.org/members, checked October 2026). Which one is accepted is decided by your school, employer or agency; ask them first.',
+ ev_cf:'Firm',ev_cs:'e-Devlet / electronic documents (Türkiye)',ev_cl:'Website',
+ ev_yes:'Accepted: institution electronic record or a document verifiable via Belge Doğrulama',ev_chk:'Check on the official site',ev_un:'Not verified, ask the firm',
+ ev_y1:'ECE: a scan of an electronic transcript verifiable through Belge Doğrulama is accepted, and your institution can send documents directly (acceptance not guaranteed). For the diploma, a copy or scan of both sides.',
+ ev_y2:'ERES: an institution-verified electronic record is accepted; a secondary diploma scan works if verifiable via Belge Doğrulama. No electronic option for degree diplomas; a scan is accepted only if the transcript confirms the degree.',
+ ev_w:'WES: Türkiye requirements appear in its “Required Documents” tool, check there.',
+ ev_how:'How to do it',ev_l:['Get your graduation certificate and transcript from e-Devlet (turkiye.gov.tr) as PDFs with a barcode or verification code.','Check whether the firm accepts Belge Doğrulama or electronic sending from your university. If not, ask the university for a sealed envelope.','Turkish documents are accepted in Turkish by most firms, some need English translations; confirm on the firm’s Türkiye page.','Pick the evaluator your employer, school or agency accepts. NACES membership signals quality, not automatic acceptance.'],
+ ev_src:'Verified pages: ECE Türkiye requirements (accounts.ece.org) and ERES documentation requirements (eres.com). The other firms’ e-Devlet acceptance was not confirmed; ask them on their site or by email.'
+});
+const EVF=[
+ ['Educational Credential Evaluators (ECE)','https://www.ece.org/','yes','ev_y1','https://accounts.ece.org/DocumentRequirement/206'],
+ ['Educational Records Evaluation Service (ERES)','http://www.eres.com/','yes','ev_y2','https://eres.com/?p=42885'],
+ ['World Education Services (WES)','https://www.wes.org/','chk','ev_w','https://apps.wes.org/required-documents'],
+ ['The Evaluation Company (SpanTran)','https://evalcompany.com','un'],
+ ['Josef Silny & Associates','http://www.jsilny.org','un'],
+ ['Foundation for International Services (FIS)','https://www.fis-web.com','un'],
+ ['International Education Research Foundation (IERF)','https://ierf.org','un'],
+ ['International Consultants of Delaware (ICD)','https://www.icdeval.com','un'],
+ ['Academic Evaluation Services (AES)','https://aes-edu.org/','un'],
+ ['Center for Educational Documentation (CED)','https://cedevaluations.com','un'],
+ ['Educational Perspectives','https://www.edperspective.org','un'],
+ ['Foreign Academic Credential Service (FACS)','https://facsusa.com','un'],
+ ['Global Credential Evaluators (GCE)','https://gceus.com','un'],
+ ['Globe Language Services','https://www.globelanguage.com','un'],
+ ['Institute of Foreign Credential Services (IFCS)','https://ifcsevals.com','un'],
+ ['International Education Evaluations (IEE)','https://www.myiee.org','un'],
+ ['Center for Applied Research, Evaluation & Education (CARE)','https://www.iescaree.com','un'],
+ ['Transcript Research','https://transcriptresearch.com','un']
+];
+function evalHTML(){
+  const a=(u,x)=>`<a href="${u}" target="_blank" rel="noopener noreferrer">${x}</a>`;
+  const rows=EVF.map(f=>{
+    const st=f[2]==='yes'?`<span class="chip ok">${t('ev_yes')}</span>`:f[2]==='chk'?`<span class="chip wait">${t('ev_chk')}</span>`:`<span class="chip">${t('ev_un')}</span>`;
+    const note=f[3]?`<div class="sm" style="margin-top:4px">${t(f[3])}${f[4]?' '+a(f[4],'→'):''}</div>`:'';
+    return `<tr><td><b>${f[0]}</b></td><td>${st}${note}</td><td>${a(f[1],f[1].replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,''))}</td></tr>`;
+  }).join('');
+  return `<div class="box" style="margin-top:20px"><h3>${t('ev_h')}</h3><p class="sm" style="margin-top:6px">${t('ev_i')}</p>
+  <div class="tabw"><table><thead><tr><th>${t('ev_cf')}</th><th>${t('ev_cs')}</th><th>${t('ev_cl')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <h4>${t('ev_how')}</h4><ul class="tight">${t('ev_l').map(s=>`<li>${s}</li>`).join('')}</ul>
+  <p class="sm">${a('https://turkiye.gov.tr','e-Devlet: turkiye.gov.tr')} · ${a('https://naces.org/members/','NACES')}</p>
+  <p class="sm">${t('ev_src')}</p></div>`;
+}
+
+
+/* ===== Intake (lives in US?) + verified attorney directory ===== */
+Object.assign(L.tr,{
+ in_h:'ABD’de yaşıyor musun?',in_i:'Sana uygun yolu göstermek için bir kez sorarız. İstediğin zaman değiştirebilirsin.',
+ in_y:'Evet, ABD’de yaşıyorum',in_n:'Hayır, Türkiye’deyim (veya başka ülkede)',
+ in_q2:'Nasıl yardımcı olabiliriz?',
+ in_career:'Kariyer yardımı ve danışmanlık',in_status:'Statü değişikliği',in_newlaw:'Yeni bir avukat arıyorum',in_asy:'İltica',in_other:'Diğer',
+ in_set:'Seçimin',in_chg:'Değiştir',
+ in_note_n:'Türkiye’den başlıyorsan sırayla 1. adımdan ilerle: profil, vize hazırlığı, iş bulma.',
+ in_note_career:'Kariyer adımlarını 3. ve 5. adımda bulursun. Çalışma izninin olup olmadığı 4. adımda anlatılır.',
+ in_note_status:'Statü değişikliği genelde bir avukatla planlanır. Aşağıdaki avukat bölümünden talep oluştur ve 4. adımda çalışma kurallarına bak.',
+ in_note_newlaw:'Aşağıdaki listeden baro kaydı doğrulanmış bir avukat seçebilirsin.',
+ in_note_asy:'İltica ciddi hukuki sonuçları olan bir başvurudur ve süre sınırları olabilir. Mutlaka lisanslı bir göç avukatıyla veya yetkili bir hukuki yardım kuruluşuyla görüş; bu site hukuki tavsiye vermez.',
+ in_note_other:'Konuyu talep notuna yaz, avukat talebi özetini hazırla.',
+ in_go2:'Avukat bölümüne git',
+ rq_t5:'Yeni avukat arayışı',rq_t6:'İltica',
+ at_h:'Doğrulanmış avukatlar',at_i:'Listede yalnızca baro kaydı kontrol edilmiş avukatlar görünür. Seçtiğin avukat talep özetine eklenir.',
+ at_none:'Henüz listeye doğrulanmış avukat eklenmedi. Avukatlar baro kaydı kontrol edildikten sonra burada görünecek. O zamana kadar talep özetini hazırlayıp kendi avukatına iletebilirsin.',
+ at_ver:'ABD barosunda kayıtlı, doğrulandı',at_on:'Doğrulama tarihi',at_bar:'Baro',at_no:'Sicil no',at_src:'Baro kaydını gör',
+ at_pick:'Bu avukatı seç',at_picked:'Seçildi',at_unpick:'Seçimi kaldır',at_sel:'Seçilen avukat',at_loc:'Yer',at_lang:'Diller',at_area:'Alanlar',at_mail:'Avukata e-posta taslağı aç',
+ at_login:'Avukat girişi ve PDF dosya erişimi',at_login_i:'Avukat girişi, dosyaların PDF olarak saklanması ve avukatın indirmesi güvenli bir sunucu, kimlik doğrulama ve şifreli depolama gerektirir. Bu sürümde kapalı. Hassas belgeleri bu sayfaya yükleme.'
+});
+Object.assign(L.en,{
+ in_h:'Do you live in the US?',in_i:'We ask once to point you to the right path. You can change it any time.',
+ in_y:'Yes, I live in the US',in_n:'No, I am in Türkiye (or another country)',
+ in_q2:'How can we help?',
+ in_career:'Career help and advice',in_status:'Change of status',in_newlaw:'I am looking for a new attorney',in_asy:'Asylum',in_other:'Other',
+ in_set:'Your choice',in_chg:'Change',
+ in_note_n:'If you are starting from Türkiye, go through step 1: profile, visa readiness, job search.',
+ in_note_career:'Career steps are in steps 3 and 5. Whether you may work is explained in step 4.',
+ in_note_status:'A change of status is usually planned with an attorney. Create a request in the attorney section below and read the work rules in step 4.',
+ in_note_newlaw:'You can pick an attorney with a verified bar record from the list below.',
+ in_note_asy:'Asylum is an application with serious legal consequences and may have deadlines. Speak with a licensed immigration attorney or an authorized legal aid organization; this site does not give legal advice.',
+ in_note_other:'Write the topic in the request note and build the attorney request summary.',
+ in_go2:'Go to the attorney section',
+ rq_t5:'Looking for a new attorney',rq_t6:'Asylum',
+ at_h:'Verified attorneys',at_i:'Only attorneys whose bar record has been checked appear here. The attorney you pick is added to your request summary.',
+ at_none:'No verified attorney has been added yet. Attorneys will appear here after their bar record is checked. Until then you can build the request summary and send it to your own attorney.',
+ at_ver:'Licensed in a US bar, verified',at_on:'Verified on',at_bar:'Bar',at_no:'Bar no.',at_src:'View bar record',
+ at_pick:'Choose this attorney',at_picked:'Chosen',at_unpick:'Remove choice',at_sel:'Chosen attorney',at_loc:'Location',at_lang:'Languages',at_area:'Areas',at_mail:'Open email draft to attorney',
+ at_login:'Attorney sign-in and PDF file access',at_login_i:'Attorney sign-in, storing files as PDF and attorney downloads need a secure server, authentication and encrypted storage. This version has none of that. Do not upload sensitive documents to this page.'
+});
+/* Fill this list ONLY after checking each attorney on the state bar's official lookup.
+   Fields: id, first, last, city, state, barState, barNo, verifiedOn (YYYY-MM-DD), verifySrc (official bar record URL),
+   langs (array), areas (array), email, site. Entries missing barNo, verifiedOn or verifySrc are never shown. */
+const ATTORNEYS=[];
+const attOK=a=>a&&a.first&&a.last&&a.barState&&a.barNo&&a.verifiedOn&&/^https:\/\//.test(a.verifySrc||'');
+function attHTML(){
+  const list=ATTORNEYS.filter(attOK);
+  const a=(u,x)=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${x}</a>`;
+  const cards=list.map(x=>{
+    const on=AR.att===x.id;
+    return `<div class="box" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><b>${esc(x.first)} ${esc(x.last)}</b><span class="chip ok">${t('at_ver')}</span></div>
+     <p class="sm" style="margin:6px 0">${t('at_loc')}: ${esc(x.city||'')}${x.state?', '+esc(x.state):''} · ${t('at_bar')}: ${esc(x.barState)} · ${t('at_no')}: ${esc(x.barNo)} · ${t('at_on')}: ${esc(x.verifiedOn)}</p>
+     ${(x.langs||[]).length?`<p class="sm" style="margin:2px 0">${t('at_lang')}: ${x.langs.map(esc).join(', ')}</p>`:''}
+     ${(x.areas||[]).length?`<p class="sm" style="margin:2px 0">${t('at_area')}: ${x.areas.map(esc).join(', ')}</p>`:''}
+     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center"><button class="btn${on?'':' ghost'} xs" data-a="attpick" data-id="${esc(x.id)}">${on?t('at_picked')+' ✓':t('at_pick')}</button>${on?`<button class="btn ghost xs" data-a="attunpick">${t('at_unpick')}</button>`:''}${a(x.verifySrc,t('at_src'))}${x.site&&/^https:\/\//.test(x.site)?' '+a(x.site,'Web'):''}</div></div>`;
+  }).join('');
+  return `<h4 style="margin-top:16px">${t('at_h')}</h4><p class="sm">${t('at_i')}</p>${cards||`<p class="cap">${t('at_none')}</p>`}
+   <details style="margin-top:12px"><summary class="sm"><b>${t('at_login')}</b></summary><p class="sm">${t('at_login_i')}</p></details>`;
+}
+const attSel=()=>ATTORNEYS.filter(attOK).find(x=>x.id===AR.att);
+function renderIntro(){
+  const el=document.getElementById('introbox');if(!el)return;
+  const i=p.intake||(p.intake={});
+  const NEED=['career','status','newlaw','asy','other'];
+  let h='';
+  if(i.done){
+    const lab=i.inUS==='n'?t('in_n'):t('in_y')+' · '+t('in_'+i.need);
+    const note=i.inUS==='n'?t('in_note_n'):t('in_note_'+i.need);
+    h=`<div class="box"><p class="sm" style="margin:0"><b>${t('in_set')}:</b> ${esc(lab)} <button class="btn ghost xs" data-a="inchg">${t('in_chg')}</button></p><p style="margin:8px 0 0">${note}</p>${i.inUS==='y'&&['status','newlaw','asy','other'].includes(i.need)?`<div style="margin-top:8px"><button class="btn xs" data-a="ingo">${t('in_go2')}</button></div>`:''}</div>`;
+  }else if(i.inUS==='y'){
+    h=`<div class="box"><h3>${t('in_q2')}</h3><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${NEED.map(k=>`<button class="btn ghost" data-a="inneed" data-v="${k}">${t('in_'+k)}</button>`).join('')}</div></div>`;
+  }else{
+    h=`<div class="box"><h3>${t('in_h')}</h3><p class="sm" style="margin:6px 0 10px">${t('in_i')}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-a="inus" data-v="y">${t('in_y')}</button><button class="btn ghost" data-a="inus" data-v="n">${t('in_n')}</button></div></div>`;
+  }
+  el.innerHTML=h;
+}
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,i=p.intake||(p.intake={});
+  if(a==='inus'){
+    if(b.dataset.v==='n'){p.intake={inUS:'n',need:'',done:true};}
+    else{p.intake={inUS:'y',need:'',done:false};}
+    save();renderIntro();
+  }
+  else if(a==='inneed'){
+    i.need=b.dataset.v;i.done=true;save();
+    const m={career:'',status:'rq_t3',newlaw:'rq_t5',asy:'rq_t6',other:'rq_t1'}[i.need];
+    if(m)AR.topic=m;
+    if(i.need==='status'){p.status='ead'===p.status?p.status:p.status;}
+    renderIntro();renderReq();
+    if(i.need==='career')setStep(3);
+  }
+  else if(a==='inchg'){p.intake={inUS:'',need:'',done:false};save();renderIntro();}
+  else if(a==='ingo'){setStep(2);renderReq();const r=document.getElementById('reqbox');if(r)r.scrollIntoView({behavior:'smooth'});}
+  else if(a==='attpick'){AR.att=b.dataset.id;AR.out='';renderReq();}
+  else if(a==='attunpick'){AR.att='';AR.out='';renderReq();}
+});
+
+
+/* ===== Supabase: accounts, requests, private PDF storage, attorney panel ===== */
+const SB_URL='https://xezmsidwjafqkkzbozpo.supabase.co';
+const SB_KEY='sb_publishable_NzX3406zroxwUffat_bu9Q_3BYWxjmW'; /* Supabase "Publishable (anon) key". Public by design; safe with RLS. */
+const SB_CDN='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+Object.assign(L.tr,{
+ sb_h:'Hesabım ve belgelerim',sb_off:'Hesap sistemi henüz yapılandırılmadı. Site sahibi Supabase anahtarını ekleyince giriş ve belge yükleme açılır.',
+ sb_err:'Bağlantı kurulamadı. Biraz sonra tekrar dene.',
+ sb_mail:'E-posta',sb_pw:'Şifre (en az 8 karakter)',sb_name:'Ad soyad',sb_in:'Giriş yap',sb_up:'Hesap aç',sb_out:'Çıkış',sb_swin:'Hesabın var mı? Giriş yap',sb_swup:'Hesabın yok mu? Hesap aç',
+ sb_consent:'Belgelerimin ve talebimin seçtiğim avukatla paylaşılmasını kabul ediyorum.',sb_consent_need:'Devam etmek için onay kutusunu işaretle.',
+ sb_conf:'Hesap açıldı. E-postandaki doğrulama bağlantısına tıkla, sonra giriş yap.',sb_bad:'E-posta veya şifre hatalı ya da hesap henüz doğrulanmadı.',sb_short:'Şifre en az 8 karakter olmalı.',
+ sb_hi:'Giriş yapıldı',sb_role_a:'Avukat paneli',sb_role_c:'Müşteri',
+ sb_save:'Mevcut talebi kaydet',sb_saved:'Talep kaydedildi.',sb_noreq:'Önce 2. adımda talep özetini hazırla.',
+ sb_my:'Taleplerim',sb_none:'Henüz talep yok.',sb_cl:'Müşteri',sb_att:'Avukat',sb_stat:'Durum',sb_new:'Yeni',
+ sb_docs:'Belgeler (yalnızca PDF, en fazla 10 MB)',sb_upl:'PDF yükle',sb_nodoc:'Belge yok.',sb_dl:'İndir',sb_del:'Sil',
+ sb_pdf:'Yalnızca PDF dosyası yüklenebilir.',sb_big:'Dosya 10 MB’tan büyük.',sb_upok:'Belge yüklendi.',sb_dlerr:'İndirilemedi.',sb_noat:'Seçilmedi',
+ sb_ap:'Gelen müşteri talepleri',sb_note:'Belgeler özel depolamada tutulur; yalnızca sen ve talepte seçilen avukat görebilir. Yine de pasaport veya SSN gibi gereksiz kimlik numaraları yükleme.'
+});
+Object.assign(L.en,{
+ sb_h:'My account and documents',sb_off:'The account system is not configured yet. Sign-in and document upload open once the site owner adds the Supabase key.',
+ sb_err:'Could not connect. Try again shortly.',
+ sb_mail:'Email',sb_pw:'Password (at least 8 characters)',sb_name:'Full name',sb_in:'Sign in',sb_up:'Create account',sb_out:'Sign out',sb_swin:'Have an account? Sign in',sb_swup:'No account? Create one',
+ sb_consent:'I agree that my documents and request are shared with the attorney I choose.',sb_consent_need:'Tick the consent box to continue.',
+ sb_conf:'Account created. Click the verification link in your email, then sign in.',sb_bad:'Wrong email or password, or the account is not verified yet.',sb_short:'Password must be at least 8 characters.',
+ sb_hi:'Signed in',sb_role_a:'Attorney panel',sb_role_c:'Client',
+ sb_save:'Save current request',sb_saved:'Request saved.',sb_noreq:'Build the request summary in step 2 first.',
+ sb_my:'My requests',sb_none:'No requests yet.',sb_cl:'Client',sb_att:'Attorney',sb_stat:'Status',sb_new:'New',
+ sb_docs:'Documents (PDF only, max 10 MB)',sb_upl:'Upload PDF',sb_nodoc:'No documents.',sb_dl:'Download',sb_del:'Delete',
+ sb_pdf:'Only PDF files can be uploaded.',sb_big:'File is larger than 10 MB.',sb_upok:'Document uploaded.',sb_dlerr:'Could not download.',sb_noat:'Not chosen',
+ sb_ap:'Incoming client requests',sb_note:'Documents are kept in private storage; only you and the attorney chosen on the request can see them. Still avoid uploading unneeded ID numbers such as a passport or SSN.'
+});
+let SB=null,SBU=null,SBROLE='client',SBST={reqs:[],docs:[],names:{},msg:'',mode:'in',email:'',name:'',busy:false,consent:false};
+const isUUID=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v||'');
+function sbMsg(m){SBST.msg=m;sbRender();}
+async function sbAttorneys(){
+  if(!SB)return;
+  const {data,error}=await SB.from('attorneys').select('*');
+  if(error||!data)return;
+  ATTORNEYS.length=0;
+  data.forEach(r=>ATTORNEYS.push({id:r.id,first:r.first_name,last:r.last_name,city:r.city,state:r.state,barState:r.bar_state,barNo:r.bar_no,verifiedOn:r.verified_on,verifySrc:r.verify_src,langs:r.langs||[],areas:r.areas||[],email:r.email,site:r.site}));
+  renderReq();
+}
+async function sbLoad(){
+  if(!SB||!SBU){SBST.reqs=[];SBST.docs=[];sbRender();return;}
+  const pr=await SB.from('profiles').select('id,role,full_name');
+  SBST.names={};(pr.data||[]).forEach(r=>{SBST.names[r.id]=r.full_name||'';if(r.id===SBU.id)SBROLE=r.role||'client';});
+  const rq=await SB.from('requests').select('*').order('created_at',{ascending:false});
+  const dc=await SB.from('documents').select('*').order('created_at',{ascending:false});
+  SBST.reqs=rq.data||[];SBST.docs=dc.data||[];
+  sbRender();
+}
+async function sbInit(){
+  if(!SB_KEY){sbRender();return;}
+  try{
+    if(!window.supabase)await loadScript(SB_CDN);
+    SB=window.supabase.createClient(SB_URL,SB_KEY);
+    const {data}=await SB.auth.getSession();SBU=data.session?data.session.user:null;
+    SB.auth.onAuthStateChange((ev,s)=>{const u=s?s.user:null;if((u&&u.id)!==(SBU&&SBU.id)){SBU=u;setTimeout(sbLoad,0);}});
+    await sbAttorneys();await sbLoad();
+  }catch(e){SBST.msg=t('sb_err');sbRender();}
+}
+function sbHTML(){
+  const m=SBST.msg?`<p class="cap" role="status">${esc(SBST.msg)}</p>`:'';
+  if(!SB_KEY)return `<div class="box"><h3>${t('sb_h')}</h3><p class="cap">${t('sb_off')}</p></div>`;
+  if(!SB)return `<div class="box"><h3>${t('sb_h')}</h3>${m||'<p class="sm">…</p>'}</div>`;
+  if(!SBU){
+    const up=SBST.mode==='up';
+    return `<div class="box"><h3>${t('sb_h')}</h3>${m}
+     <div class="grid" style="max-width:520px;margin-top:10px">${up?`<label class="fld" for="sb_name"><span>${t('sb_name')}</span><input id="sb_name" type="text" maxlength="80" autocomplete="name" value="${esc(SBST.name)}"></label>`:''}
+      <label class="fld" for="sb_email"><span>${t('sb_mail')}</span><input id="sb_email" type="email" maxlength="120" autocomplete="email" value="${esc(SBST.email)}"></label>
+      <label class="fld" for="sb_pw"><span>${t('sb_pw')}</span><input id="sb_pw" type="password" maxlength="72" autocomplete="${up?'new-password':'current-password'}"></label></div>
+     ${up?`<label class="chk" style="margin-top:10px"><input id="sb_consent" type="checkbox" ${SBST.consent?'checked':''}><span>${t('sb_consent')}</span></label>`:''}
+     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-a="${up?'sbup':'sbin'}">${up?t('sb_up'):t('sb_in')}</button><button class="btn ghost" data-a="sbmode">${up?t('sb_swin'):t('sb_swup')}</button></div>
+     <p class="sm" style="margin-top:10px">${t('sb_note')}</p></div>`;
+  }
+  const isA=SBROLE==='attorney';
+  const dl=d=>`<li style="margin-bottom:6px">${esc(d.name||'PDF')} <span class="mono sm">${d.size?Math.round(d.size/1024)+' KB':''}</span> <button class="btn ghost xs" data-a="sbdl" data-id="${esc(d.id)}">${t('sb_dl')}</button>${!isA||d.client_id===SBU.id?` <button class="btn ghost xs" data-a="sbdel" data-id="${esc(d.id)}">${t('sb_del')}</button>`:''}</li>`;
+  const reqs=SBST.reqs.map(r=>{
+    const docs=SBST.docs.filter(d=>d.request_id===r.id);
+    const mine=r.client_id===SBU.id;
+    const at=ATTORNEYS.find(a=>a.id===r.attorney_id);
+    return `<div class="box" style="margin-top:12px"><p class="sm" style="margin:0 0 6px"><span class="mono">${esc(String(r.created_at||'').slice(0,10))}</span> · ${t('sb_stat')}: <b>${esc(r.status==='new'?t('sb_new'):r.status)}</b> · ${t('sb_att')}: ${at?esc(at.first+' '+at.last):t('sb_noat')}${!mine?` · ${t('sb_cl')}: ${esc(SBST.names[r.client_id]||'')}`:''}</p>
+      <div class="out" style="white-space:pre-wrap">${esc(r.summary||'')}</div>
+      <h4>${t('sb_docs')}</h4>${docs.length?`<ul class="tight" style="list-style:none;padding:0">${docs.map(dl).join('')}</ul>`:`<p class="sm">${t('sb_nodoc')}</p>`}
+      ${mine?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="file" accept="application/pdf,.pdf" id="sbf_${esc(r.id)}" aria-label="${t('sb_upl')}"><button class="btn ghost xs" data-a="sbupl" data-id="${esc(r.id)}">${t('sb_upl')}</button></div>`:''}</div>`;
+  }).join('');
+  return `<div class="box"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h3>${t('sb_h')}</h3><span class="sm">${t('sb_hi')}: ${esc(SBU.email||'')} · ${isA?t('sb_role_a'):t('sb_role_c')} <button class="btn ghost xs" data-a="sbout">${t('sb_out')}</button></span></div>${m}
+   <p class="sm">${t('sb_note')}</p>
+   <label class="chk" style="margin:8px 0"><input id="sb_consent" type="checkbox" ${SBST.consent?'checked':''}><span>${t('sb_consent')}</span></label>
+   <button class="btn" data-a="sbsave">${t('sb_save')}</button>
+   <h4>${isA?t('sb_ap'):t('sb_my')}</h4>${reqs||`<p class="sm">${t('sb_none')}</p>`}</div>`;
+}
+function sbRender(){const el=document.getElementById('p8body');if(el&&!(window.claude&&window.claude.use))el.innerHTML=sbHTML();}
+const _renderLive0=renderLive;
+renderLive=function(f){_renderLive0(f);sbRender();};
+const gv=id=>{const e=document.getElementById(id);return e?e.value:'';};
+app.addEventListener('change',e=>{if(e.target.id==='sb_consent')SBST.consent=e.target.checked;});
+app.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b||!b.dataset.a.startsWith('sb'))return;
+  const a=b.dataset.a;
+  if(a==='sbmode'){SBST.email=gv('sb_email');SBST.name=gv('sb_name');SBST.mode=SBST.mode==='up'?'in':'up';SBST.msg='';sbRender();return;}
+  if(!SB)return;
+  try{
+    if(a==='sbup'){
+      SBST.email=gv('sb_email').trim();SBST.name=gv('sb_name').trim();const pw=gv('sb_pw');SBST.consent=!!(document.getElementById('sb_consent')||{}).checked;
+      if(!SBST.consent){sbMsg(t('sb_consent_need'));return;}
+      if(pw.length<8){sbMsg(t('sb_short'));return;}
+      const {error}=await SB.auth.signUp({email:SBST.email,password:pw,options:{data:{full_name:SBST.name},emailRedirectTo:location.origin}});
+      if(error){sbMsg(error.message);return;}
+      SBST.mode='in';sbMsg(t('sb_conf'));
+    }
+    else if(a==='sbin'){
+      SBST.email=gv('sb_email').trim();
+      const {error}=await SB.auth.signInWithPassword({email:SBST.email,password:gv('sb_pw')});
+      if(error){sbMsg(t('sb_bad'));return;}
+      SBST.msg='';const g=await SB.auth.getSession();SBU=g.data.session?g.data.session.user:null;await sbLoad();
+    }
+    else if(a==='sbout'){await SB.auth.signOut();SBU=null;SBROLE='client';SBST.reqs=[];SBST.docs=[];SBST.msg='';sbRender();}
+    else if(a==='sbsave'){
+      SBST.consent=!!(document.getElementById('sb_consent')||{}).checked;
+      if(!SBST.consent){sbMsg(t('sb_consent_need'));return;}
+      if(!AR.out){sbMsg(t('sb_noreq'));return;}
+      const row={topic:t(AR.topic),summary:AR.out,attorney_id:isUUID(AR.att)?AR.att:null};
+      const {error}=await SB.from('requests').insert(row);
+      if(error){sbMsg(error.message);return;}
+      await sbLoad();sbMsg(t('sb_saved'));
+    }
+    else if(a==='sbupl'){
+      SBST.consent=!!(document.getElementById('sb_consent')||{}).checked;
+      if(!SBST.consent){sbMsg(t('sb_consent_need'));return;}
+      const inp=document.getElementById('sbf_'+b.dataset.id),f=inp&&inp.files&&inp.files[0];if(!f)return;
+      if(f.size>10*1024*1024){sbMsg(t('sb_big'));return;}
+      const head=new TextDecoder().decode(new Uint8Array(await f.slice(0,5).arrayBuffer()));
+      if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))||head!=='%PDF-'){sbMsg(t('sb_pdf'));return;}
+      const path=SBU.id+'/'+b.dataset.id+'/'+Date.now()+'.pdf';
+      const up=await SB.storage.from('case-docs').upload(path,f,{contentType:'application/pdf',upsert:false});
+      if(up.error){sbMsg(up.error.message);return;}
+      const ins=await SB.from('documents').insert({request_id:b.dataset.id,path,name:f.name.slice(0,120),size:f.size});
+      if(ins.error){await SB.storage.from('case-docs').remove([path]);sbMsg(ins.error.message);return;}
+      await sbLoad();sbMsg(t('sb_upok'));
+    }
+    else if(a==='sbdl'){
+      const d=SBST.docs.find(x=>x.id===b.dataset.id);if(!d)return;
+      const {data,error}=await SB.storage.from('case-docs').createSignedUrl(d.path,60,{download:d.name||true});
+      if(error||!data){sbMsg(t('sb_dlerr'));return;}
+      const l=document.createElement('a');l.href=data.signedUrl;l.rel='noopener';document.body.appendChild(l);l.click();l.remove();
+    }
+    else if(a==='sbdel'){
+      const d=SBST.docs.find(x=>x.id===b.dataset.id);if(!d)return;
+      await SB.storage.from('case-docs').remove([d.path]);
+      await SB.from('documents').delete().eq('id',d.id);
+      await sbLoad();
+    }
+  }catch(err){sbMsg(t('sb_err'));}
+});
 
 shell();
 initDb();
+sbInit();
 </script>
 
 </body>
