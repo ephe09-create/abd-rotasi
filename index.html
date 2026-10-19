@@ -132,6 +132,13 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .jump button{font:500 .76rem var(--font-m);padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--acc);cursor:pointer}
 .jump button[aria-current]{background:var(--acc);color:var(--acc-ink)}
 .lk{font:500 .62rem var(--font-m);margin-left:6px;color:var(--warn);font-style:normal}
+.hero{position:relative;border-radius:12px;overflow:hidden;margin:0 0 16px;background:#1b2740;min-height:240px}
+.hero img{display:block;width:100%;height:clamp(260px,44vw,440px);object-fit:cover;object-position:50% 62%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,14,30,.78) 0%,rgba(8,14,30,.5) 45%,rgba(8,14,30,0) 80%)}
+.hero-in{position:absolute;z-index:1;left:clamp(16px,4vw,44px);bottom:clamp(16px,4vw,40px);max-width:min(520px,86%);color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.hero-in h1{font:700 clamp(1.5rem,4.2vw,2.5rem)/1.15 var(--font-d);margin:0 0 8px;color:#fff}
+.hero-in p{margin:0 0 14px;font-size:clamp(.9rem,1.8vw,1.05rem);line-height:1.45;color:#fff}
+.hero-in .btn{background:#fff;color:#12306b;border-color:#fff;text-shadow:none}
 .btn.xs{padding:5px 10px;font-size:.78rem;display:inline-block}
 .bkrow{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
 .bkrow .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
@@ -226,7 +233,7 @@ tr:{
  tag:'Türkiye’den ABD’ye hazırlık rehberi',
  stamp:'Önemli',
  disc:'Bu site hukuki veya göçmenlik danışmanlığı değildir. Skorlar, girdiğin bilgilere göre hesaplanan hazırlık göstergesidir; vize ya da iş onayı olasılığı değildir. Kararı konsolosluk ve USCIS verir. Kurallar sık değişir.',
- priv:'Girdiğin bilgiler yalnızca bu tarayıcıda kalır, sunucuya gönderilmez.',
+ priv:'Profil bilgilerin bu tarayıcıda kalır. Hesap açarsan, talep kaydeder veya belge yüklersen bunlar özel bir sunucuda (Supabase) saklanır.',
  s1:'Profil',s2:'Vize hazırlığı',s3:'İş bulma',s4:'Çalışma izni',s5:'Kariyer',
  h1:'Profilini doldur',i1:'Eğitim, deneyim ve durumuna göre altı yol için hazırlık skoru hesaplanır. Alanlar örnek değerlerle açıldı; kendi bilgilerinle değiştir. Bilmediğini boş ya da “Yok” bırak.',
  g1:'Eğitim ve iş',g2:'Dil ve seyahat',g3:'Yol bazlı durumlar',
@@ -289,7 +296,7 @@ en:{
  tag:'Preparation guide for Turkey to the US',
  stamp:'Important',
  disc:'This site is not legal or immigration advice. Scores are preparedness indicators calculated from what you enter; they are not the probability of a visa or job approval. Consulates and USCIS decide. Rules change often.',
- priv:'What you enter stays in this browser and is not sent to a server.',
+ priv:'Your profile data stays in this browser. If you create an account, save a request or upload a document, these are stored on a private server (Supabase).',
  s1:'Profile',s2:'Visa readiness',s3:'Job search',s4:'Work permit',s5:'Career',
  h1:'Fill in your profile',i1:'A readiness score is calculated for six routes from your education, experience and situation. Fields open with sample values; replace them with your own. Leave unknowns empty or “None”.',
  g1:'Education and work',g2:'Language and travel',g3:'Route-specific situation',
@@ -507,6 +514,7 @@ function shell(){
   app.innerHTML=`
   <header class="top"><div class="brand"><b>ABD Rotası</b><span>TR → US · ${t('tag')}</span></div>
    <div class="lang" role="group" aria-label="Language"><button data-lang="tr" aria-pressed="${lang==='tr'}">TR</button><button data-lang="en" aria-pressed="${lang==='en'}">EN</button></div></header>
+  <section class="hero"><img src="hero.jpg" alt="${t('hero_alt')}" width="1291" height="860" fetchpriority="high"><div class="hero-in"><h1>${t('hero_h')}</h1><p>${t('hero_p')}</p><button class="btn" data-a="herostart">${t('hero_b')}</button></div></section>
   <div class="notice"><strong>${t('stamp')}</strong><span>${t('disc')}</span><span class="sm">${t('priv')}</span></div>
   <div id="introbox" style="margin:0 0 16px"></div>
   <div class="shell"><nav class="rail" aria-label="Steps">${navBtns}</nav>
@@ -1779,6 +1787,10 @@ app.addEventListener('click',async e=>{
 });
 const _renderExtras0=renderExtras;
 renderExtras=function(){_renderExtras0();renderSummary();renderStat();renderGate();refreshLocks();};
+
+Object.assign(L.tr,{hero_h:'Türkiye’den ABD’ye yolun burada başlıyor',hero_p:'Profilini doldur, hazırlık skorlarını gör ve doğrulanmış avukatlarla çalış.',hero_b:'Profilini doldur',hero_alt:'Gün batımında New York şehri silueti'});
+Object.assign(L.en,{hero_h:'Your path from Türkiye to the US starts here',hero_p:'Fill in your profile, see your readiness scores and work with verified attorneys.',hero_b:'Fill in your profile',hero_alt:'New York City skyline at sunset'});
+app.addEventListener('click',e=>{const b=e.target.closest('[data-a="herostart"]');if(!b)return;setStep(1);const s=document.querySelector('.shell');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});});
 
 shell();
 initDb();
